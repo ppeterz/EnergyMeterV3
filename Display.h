@@ -11,6 +11,7 @@ class Display
 public:
     void begin();
     void show(int screen, const Measurement m[NUM_CHANNELS], Energy energy[NUM_CHANNELS]);
+    void showMessage(const char* line1, const char* line2 = nullptr);
 
 private:
     // If the screen stays blank, 0x27 is the first thing to check -- run an

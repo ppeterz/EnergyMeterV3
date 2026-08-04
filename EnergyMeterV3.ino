@@ -142,10 +142,16 @@ BLYNK_WRITE(V5) {
 // Check GitHub for new firmware version automatically
 void checkForGitHubUpdate()
 {
-    if (!wifiConnected) return;
+    if (!wifiConnected)
+    {
+        display.showMessage("GitHub OTA", "No WiFi Conn!");
+        delay(1500);
+        return;
+    }
 
     Serial.println("----------------------------------------");
     Serial.printf("Checking GitHub for updates... (Current: v%s)\n", FIRMWARE_VERSION);
+    display.showMessage("Checking GitHub", "For FW Updates");
 
     WiFiClientSecure client;
     client.setInsecure();
@@ -166,6 +172,10 @@ void checkForGitHubUpdate()
             if (remoteVersion != FIRMWARE_VERSION && remoteVersion.length() > 0 && remoteVersion != "your-username/your-repo")
             {
                 Serial.printf("New version v%s found! Auto-downloading firmware from GitHub...\n", remoteVersion.c_str());
+                char line2[17];
+                snprintf(line2, sizeof(line2), "v%s -> v%s", FIRMWARE_VERSION, remoteVersion.c_str());
+                display.showMessage("New FW Found!", line2);
+                delay(1500);
                 http.end();
                 performGitHubOTA(GITHUB_FIRMWARE_URL);
                 return;
@@ -173,17 +183,23 @@ void checkForGitHubUpdate()
             else
             {
                 Serial.println("Firmware is up to date.");
+                display.showMessage("Firmware Up2Date", "No New Version");
+                delay(2000);
             }
         }
         else
         {
             Serial.printf("Version check HTTP result: %d\n", httpCode);
+            display.showMessage("Check Failed!", "HTTP Error");
+            delay(1500);
         }
         http.end();
     }
     else
     {
         Serial.println("Unable to connect to GitHub version URL.");
+        display.showMessage("Check Failed!", "Connection Error");
+        delay(1500);
     }
 }
 
@@ -191,12 +207,16 @@ void checkForGitHubUpdate()
 void performGitHubOTA(const String& url) {
     if (!wifiConnected) {
         Serial.println("GitHub OTA: WiFi not connected!");
+        display.showMessage("Update Failed!", "WiFi Disconnect");
+        delay(1500);
         return;
     }
     Serial.println("----------------------------------------");
     Serial.println("Starting Remote GitHub OTA Update...");
     Serial.print("Downloading from: ");
     Serial.println(url);
+
+    display.showMessage("Updating FW...", "Downloading...");
 
     WiFiClientSecure client;
     client.setInsecure(); // Bypass SSL certificate validation for GitHub
@@ -209,12 +229,18 @@ void performGitHubOTA(const String& url) {
             Serial.printf("GitHub OTA FAILED! Error (%d): %s\n", 
                           httpUpdate.getLastError(), 
                           httpUpdate.getLastErrorString().c_str());
+            display.showMessage("Update Failed!", "Try Again Later");
+            delay(2000);
             break;
         case HTTP_UPDATE_NO_UPDATES:
             Serial.println("GitHub OTA: No new firmware found.");
+            display.showMessage("No New Firmware", "Up To Date");
+            delay(2000);
             break;
         case HTTP_UPDATE_OK:
             Serial.println("GitHub OTA SUCCESSFUL! Rebooting into new firmware...");
+            display.showMessage("Update Success!", "Rebooting...");
+            delay(1500);
             break;
     }
 }
@@ -318,6 +344,14 @@ void loop()
     if (wifiConnected) Blynk.run();
 
     command.process(relay, energy, sensor);
+
+    if (button.held(4000))
+    {
+        Serial.println("Button held for 4s -> Triggering GitHub Update Check!");
+        display.showMessage("Hold Detected!", "Checking GitHub");
+        delay(1000);
+        checkForGitHubUpdate();
+    }
 
     if (button.pressed()) advanceScreen();               // manual jump + resets the auto-cycle timer
     {

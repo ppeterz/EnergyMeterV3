@@ -16,9 +16,31 @@ bool Button::pressed()
     if ((millis() - lastDebounceMs) > DEBOUNCE_MS && reading != state)
     {
         state = reading;
-        if (state == LOW) result = true;   // INPUT_PULLUP: LOW = pressed
+        if (state == LOW) {
+            result = true;   // INPUT_PULLUP: LOW = pressed
+            pressStartMs = millis();
+            holdTriggered = false;
+        }
     }
 
     lastReading = reading;
     return result;
+}
+
+bool Button::held(unsigned long targetMs)
+{
+    bool reading = digitalRead(pin);
+    if (reading == LOW && !holdTriggered)
+    {
+        if (pressStartMs > 0 && (millis() - pressStartMs >= targetMs))
+        {
+            holdTriggered = true;
+            return true;
+        }
+    }
+    if (reading == HIGH)
+    {
+        holdTriggered = false;
+    }
+    return false;
 }
