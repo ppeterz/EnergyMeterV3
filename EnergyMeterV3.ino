@@ -39,13 +39,16 @@
 #define BLYNK_TEMPLATE_NAME "Energy Monitor"
 #define BLYNK_AUTH_TOKEN    "4uPlGiQPU-errl4_KNACE2Cs6H9tjo2D"
 
+// Shrink Blynk flash footprint
+#define BLYNK_NO_BUILTIN
+#define BLYNK_SEND_THROTTLE 0
+
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include <BlynkSimpleEsp32.h>
-#include <ArduinoOTA.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <httpUpdate.h>
+#include <HTTPUpdate.h>
 #include "Config.h"
 #include "Sensor.h"
 #include "MeasurementEngine.h"
@@ -79,7 +82,8 @@ const char* energyKeys[NUM_CHANNELS]   = { "eIn", "e1", "e2", "e3" };
 
 int currentScreen = 0;                    // 0 = input, 1..NUM_SOCKETS = sockets
 unsigned long lastScreenChangeMs = 0;
-const unsigned long AUTO_CYCLE_MS = 3000;
+const unsigned long HOME_SCREEN_MS   = 6000;   // home screen (overview) stays 6 seconds
+const unsigned long SOCKET_SCREEN_MS = 3000;   // socket screens cycle every 3 seconds
 
 unsigned long lastMeasureMs = 0;
 const unsigned long MEASURE_INTERVAL_MS = 1000;   // one full capture+compute cycle per second
@@ -298,10 +302,6 @@ void setup()
         Blynk.config(BLYNK_AUTH_TOKEN);
         Blynk.connect();
 
-        ArduinoOTA.setHostname("EnergyMonitor");
-        ArduinoOTA.begin();
-        Serial.println("OTA wireless update ready! (Hostname: EnergyMonitor)");
-
         // Automatically check GitHub for updates on boot/Wi-Fi connect
         checkForGitHubUpdate();
     }
@@ -315,15 +315,15 @@ void setup()
 
 void loop()
 {
-    if (wifiConnected) {
-        Blynk.run();
-        ArduinoOTA.handle();
-    }
+    if (wifiConnected) Blynk.run();
 
     command.process(relay, energy, sensor);
 
     if (button.pressed()) advanceScreen();               // manual jump + resets the auto-cycle timer
-    if (millis() - lastScreenChangeMs >= AUTO_CYCLE_MS) advanceScreen();
+    {
+        unsigned long cycleDuration = (currentScreen == 0) ? HOME_SCREEN_MS : SOCKET_SCREEN_MS;
+        if (millis() - lastScreenChangeMs >= cycleDuration) advanceScreen();
+    }
 
     unsigned long now = millis();
 
