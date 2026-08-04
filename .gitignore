@@ -1,0 +1,15 @@
+# Ignore Arduino IDE build directory
+build/
+
+# Ignore temporary compilation files
+*.elf
+*.map
+*.partitions.bin
+*.bootloader.bin
+*.merged.bin
+
+# IDE and OS settings
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
