@@ -62,6 +62,7 @@
 #include "Button.h"
 #include "Tariff.h"
 #include "DSP.h"
+#include "WebDashboard.h"
 
 WiFiManager wm;
 bool wifiConnected = false;
@@ -339,8 +340,13 @@ void setup()
     {
         Serial.print("WiFi connected: ");
         Serial.println(WiFi.SSID());
+        Serial.print("Local IP Address: http://");
+        Serial.println(WiFi.localIP());
+        
         Blynk.config(BLYNK_AUTH_TOKEN);
         Blynk.connect();
+
+        webDashboard.begin();
 
         // Automatically check GitHub for updates on boot/Wi-Fi connect
         checkForGitHubUpdate();
@@ -358,7 +364,11 @@ const unsigned long WATCHDOG_INTERVAL_MS = 15000;  // Check connection status ev
 
 void loop()
 {
-    if (wifiConnected) Blynk.run();
+    if (wifiConnected)
+    {
+        Blynk.run();
+        webDashboard.handleClient(relay, energy, measurements);
+    }
 
     command.process(relay, energy, sensor);
 
