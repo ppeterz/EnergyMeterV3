@@ -12,15 +12,15 @@
 
 #define PIN_VOLTAGE         36   // ZMPT101B (shared across all channels)
 #define PIN_CURRENT_INPUT   39   // ACS712 - total input current
-#define PIN_CURRENT_SOCK1   35   // ACS712 - socket 1
+#define PIN_CURRENT_SOCK1   33   // ACS712 - socket 1
 #define PIN_CURRENT_SOCK2   32   // ACS712 - socket 2
-#define PIN_CURRENT_SOCK3   33   // ACS712 - socket 3
+#define PIN_CURRENT_SOCK3   35   // ACS712 - socket 3
 
 // ---------------- Pins: relays ----------------
 
-#define PIN_RELAY1   16
+#define PIN_RELAY1   18
 #define PIN_RELAY2   17
-#define PIN_RELAY3   18
+#define PIN_RELAY3   16
 
 // ---------------- Pins: button + display ----------------
 
@@ -53,7 +53,7 @@
 
 // ---------------- Firmware & Remote Auto-OTA ----------------
 
-#define FIRMWARE_VERSION      "3.1.0"
+#define FIRMWARE_VERSION      "3.1.1"
 #define GITHUB_VERSION_URL    "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/version.txt"
 #define GITHUB_FIRMWARE_URL   "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/firmware.bin"
 

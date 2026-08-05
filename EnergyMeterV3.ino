@@ -338,11 +338,15 @@ void setup()
 
     if (wifiConnected)
     {
+        String ipStr = WiFi.localIP().toString();
         Serial.print("WiFi connected: ");
         Serial.println(WiFi.SSID());
         Serial.print("Local IP Address: http://");
-        Serial.println(WiFi.localIP());
-        
+        Serial.println(ipStr);
+
+        display.showMessage("WiFi Connected!", ipStr.c_str());
+        delay(4000);
+
         Blynk.config(BLYNK_AUTH_TOKEN);
         Blynk.connect();
 
