@@ -57,19 +57,17 @@ void MeasurementEngine::calculate(Sensor &sensor, Measurement out[NUM_CHANNELS])
         m.vrmsADC       = avgVrmsADC;
         m.irmsADC       = irmsADCSum[c] / AVG_COUNT;
 
-        if (fabs(m.current) < CURRENT_DEADBAND) m.current = 0.0f;
-
-        if (m.current == 0.0f)
+        if (fabs(m.current) < CURRENT_DEADBAND || fabs(m.realPower) < POWER_DEADBAND)
         {
+            m.current       = 0.0f;
+            m.realPower     = 0.0f;
             m.apparentPower = 0.0f;
-            m.realPower = 0.0f;
-            m.powerFactor = 0.0f;
+            m.powerFactor   = 0.0f;
         }
         else
         {
-            if (fabs(m.realPower) < POWER_DEADBAND) m.realPower = 0.0f;
             m.powerFactor = (m.apparentPower > 0.01f) ? (m.realPower / m.apparentPower) : 0.0f;
-            if (m.powerFactor > 1.0f) m.powerFactor = 1.0f;
+            if (m.powerFactor > 1.0f)  m.powerFactor = 1.0f;
             if (m.powerFactor < -1.0f) m.powerFactor = -1.0f;
         }
     }

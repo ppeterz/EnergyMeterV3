@@ -46,14 +46,14 @@
 #define VOLT_SCALE      0.4290f
 #define CURRENT_SCALE   0.0121f
 
-// ---------------- Noise ----------------
+// ---------------- Noise & Zero-Current Suppression ----------------
 
-#define CURRENT_DEADBAND 0.00f
-#define POWER_DEADBAND   3.0f
+#define CURRENT_DEADBAND 0.08f   // Ignore ACS712 baseline noise under 80mA
+#define POWER_DEADBAND   5.00f   // Ignore ghost power calculation under 5W
 
 // ---------------- Firmware & Remote Auto-OTA ----------------
 
-#define FIRMWARE_VERSION      "3.0.4"
+#define FIRMWARE_VERSION      "3.0.5"
 #define GITHUB_VERSION_URL    "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/version.txt"
 #define GITHUB_FIRMWARE_URL   "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/firmware.bin"
 
