@@ -3,13 +3,19 @@
 
 #include <Arduino.h>
 
+enum ButtonEvent
+{
+    BTN_NONE = 0,
+    BTN_CLICK,        // Quick press and release (< 1.5s) -> Cycle LCD Screen
+    BTN_HOLD_MEDIUM,  // Held for 1.5s -> Toggle Socket Relay
+    BTN_HOLD_LONG     // Held for 4.0s -> Firmware OTA Update
+};
+
 class Button
 {
 public:
     void begin(int pin);
-    bool pressed();                                          // short press click
-    bool heldFor(unsigned long minMs, unsigned long maxMs);  // held between minMs and maxMs
-    bool held(unsigned long ms);                             // held at least ms
+    ButtonEvent update();  // Call once per loop() to get active event
 
 private:
     int pin;
@@ -17,8 +23,9 @@ private:
     bool state = HIGH;
     unsigned long lastDebounceMs = 0;
     unsigned long pressStartMs = 0;
-    unsigned long lastTriggeredMs = 0;
-    static const unsigned long DEBOUNCE_MS = 20;
+    bool mediumTriggered = false;
+    bool longTriggered = false;
+    static const unsigned long DEBOUNCE_MS = 25;
 };
 
 #endif

@@ -6,53 +6,63 @@ void Button::begin(int p)
     pinMode(pin, INPUT_PULLUP);
 }
 
-bool Button::pressed()
+ButtonEvent Button::update()
 {
     bool reading = digitalRead(pin);
-    bool result = false;
+    ButtonEvent event = BTN_NONE;
 
-    if (reading != lastReading) lastDebounceMs = millis();
-
-    if ((millis() - lastDebounceMs) > DEBOUNCE_MS && reading != state)
+    // Debounce timing
+    if (reading != lastReading)
     {
-        state = reading;
-        if (state == LOW) {
-            result = true;   // INPUT_PULLUP: LOW = pressed
-            pressStartMs = millis();
-            lastTriggeredMs = 0;
+        lastDebounceMs = millis();
+    }
+
+    if ((millis() - lastDebounceMs) > DEBOUNCE_MS)
+    {
+        // State change detected
+        if (reading != state)
+        {
+            state = reading;
+
+            if (state == LOW)
+            {
+                // Button Pressed Down
+                pressStartMs = millis();
+                mediumTriggered = false;
+                longTriggered = false;
+            }
+            else
+            {
+                // Button Released
+                unsigned long duration = millis() - pressStartMs;
+                // If it was a quick click and no hold action was triggered
+                if (duration < 1500 && !mediumTriggered && !longTriggered)
+                {
+                    event = BTN_CLICK;
+                }
+                pressStartMs = 0;
+            }
         }
     }
 
     lastReading = reading;
-    return result;
-}
 
-bool Button::heldFor(unsigned long minMs, unsigned long maxMs)
-{
-    bool reading = digitalRead(pin);
-    if (reading == LOW && pressStartMs > 0)
+    // While button is continuously held down (LOW state)
+    if (state == LOW && pressStartMs > 0)
     {
         unsigned long elapsed = millis() - pressStartMs;
-        if (elapsed >= minMs && elapsed < maxMs && lastTriggeredMs < pressStartMs + minMs)
-        {
-            lastTriggeredMs = millis();
-            return true;
-        }
-    }
-    return false;
-}
 
-bool Button::held(unsigned long targetMs)
-{
-    bool reading = digitalRead(pin);
-    if (reading == LOW && pressStartMs > 0)
-    {
-        unsigned long elapsed = millis() - pressStartMs;
-        if (elapsed >= targetMs && lastTriggeredMs < pressStartMs + targetMs)
+        if (elapsed >= 4000 && !longTriggered)
         {
-            lastTriggeredMs = millis();
-            return true;
+            longTriggered = true;
+            event = BTN_HOLD_LONG;
+        }
+        else if (elapsed >= 1500 && elapsed < 4000 && !mediumTriggered)
+        {
+            mediumTriggered = true;
+            event = BTN_HOLD_MEDIUM;
         }
     }
-    return false;
+
+    return event;
 }

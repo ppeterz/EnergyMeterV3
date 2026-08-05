@@ -82,8 +82,8 @@ const char* energyKeys[NUM_CHANNELS]   = { "eIn", "e1", "e2", "e3" };
 
 int currentScreen = 0;                    // 0 = input, 1..NUM_SOCKETS = sockets
 unsigned long lastScreenChangeMs = 0;
-const unsigned long HOME_SCREEN_MS   = 10000;  // home screen (overview) stays 10 seconds
-const unsigned long SOCKET_SCREEN_MS = 3000;   // socket screens cycle every 3 seconds
+const unsigned long HOME_SCREEN_MS   = 15000;  // home screen (overview) stays 10 seconds
+const unsigned long SOCKET_SCREEN_MS = 8000;   // socket screens stay 8 seconds
 
 unsigned long lastMeasureMs = 0;
 const unsigned long MEASURE_INTERVAL_MS = 1000;   // one full capture+compute cycle per second
@@ -379,8 +379,15 @@ void loop()
         }
     }
 
-    // 1.5s Hold -> Toggle relay of current socket (or all relays if on Overview)
-    if (button.heldFor(1500, 4000))
+    // Process Physical Push Button Events
+    ButtonEvent btnEvent = button.update();
+
+    if (btnEvent == BTN_CLICK)
+    {
+        display.resetActivityTimer();
+        advanceScreen();               // manual jump + resets the auto-cycle timer
+    }
+    else if (btnEvent == BTN_HOLD_MEDIUM)
     {
         display.resetActivityTimer();
         if (currentScreen == 0)
@@ -406,20 +413,13 @@ void loop()
         }
         delay(1200);
     }
-
-    if (button.held(4000))
+    else if (btnEvent == BTN_HOLD_LONG)
     {
         display.resetActivityTimer();
         Serial.println("Button held for 4s -> Triggering GitHub Update Check!");
         display.showMessage("Hold Detected!", "Checking GitHub");
         delay(1000);
         checkForGitHubUpdate();
-    }
-
-    if (button.pressed())
-    {
-        display.resetActivityTimer();
-        advanceScreen();               // manual jump + resets the auto-cycle timer
     }
 
     {
