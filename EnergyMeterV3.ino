@@ -82,7 +82,7 @@ const char* energyKeys[NUM_CHANNELS]   = { "eIn", "e1", "e2", "e3" };
 
 int currentScreen = 0;                    // 0 = input, 1..NUM_SOCKETS = sockets
 unsigned long lastScreenChangeMs = 0;
-const unsigned long HOME_SCREEN_MS   = 6000;   // home screen (overview) stays 6 seconds
+const unsigned long HOME_SCREEN_MS   = 10000;  // home screen (overview) stays 10 seconds
 const unsigned long SOCKET_SCREEN_MS = 3000;   // socket screens cycle every 3 seconds
 
 unsigned long lastMeasureMs = 0;
