@@ -216,11 +216,22 @@ void performGitHubOTA(const String& url) {
     Serial.print("Downloading from: ");
     Serial.println(url);
 
-    display.showMessage("Updating FW...", "Downloading...");
+    display.showMessage("Updating FW...", "Connecting...");
 
     WiFiClientSecure client;
     client.setInsecure(); // Bypass SSL certificate validation for GitHub
     httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+    // Live progress callback: displays percentage on LCD while downloading
+    httpUpdate.onProgress([](int current, int total) {
+        if (total > 0) {
+            int percent = (current * 100) / total;
+            char line2[17];
+            snprintf(line2, sizeof(line2), "Progress: %3d%%", percent);
+            display.showMessage("Downloading...", line2);
+            Serial.printf("OTA Progress: %d%%\n", percent);
+        }
+    });
 
     t_httpUpdate_return ret = httpUpdate.update(client, url);
 
