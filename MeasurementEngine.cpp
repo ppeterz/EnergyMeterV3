@@ -5,8 +5,7 @@
 
 void MeasurementEngine::calculate(Sensor &sensor, Measurement out[NUM_CHANNELS])
 {
-    float voltScale    = calibration.getVoltScale();
-    float currentScale = calibration.getCurrentScale();
+    float voltScale = calibration.getVoltScale();
 
     float voltageSum = 0, vrmsADCSum = 0;
     float currentSum[NUM_CHANNELS]  = {0};
@@ -31,10 +30,10 @@ void MeasurementEngine::calculate(Sensor &sensor, Measurement out[NUM_CHANNELS])
         {
             float iOffset = dsp.mean(sensor.currentBuffer[c]);
             float irmsADC = dsp.rms(sensor.currentBuffer[c], iOffset);
-            float current = irmsADC * currentScale;
+            float current = irmsADC * calibration.getCurrentScale(c);
 
             float real = power.realPower(sensor.voltageBuffer, sensor.currentBuffer[c],
-                                          vOffset, iOffset);
+                                          vOffset, iOffset, c);
             float apparent = voltage * current;
 
             currentSum[c]  += current;

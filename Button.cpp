@@ -19,7 +19,7 @@ bool Button::pressed()
         if (state == LOW) {
             result = true;   // INPUT_PULLUP: LOW = pressed
             pressStartMs = millis();
-            holdTriggered = false;
+            lastTriggeredMs = 0;
         }
     }
 
@@ -27,20 +27,32 @@ bool Button::pressed()
     return result;
 }
 
-bool Button::held(unsigned long targetMs)
+bool Button::heldFor(unsigned long minMs, unsigned long maxMs)
 {
     bool reading = digitalRead(pin);
-    if (reading == LOW && !holdTriggered)
+    if (reading == LOW && pressStartMs > 0)
     {
-        if (pressStartMs > 0 && (millis() - pressStartMs >= targetMs))
+        unsigned long elapsed = millis() - pressStartMs;
+        if (elapsed >= minMs && elapsed < maxMs && lastTriggeredMs < pressStartMs + minMs)
         {
-            holdTriggered = true;
+            lastTriggeredMs = millis();
             return true;
         }
     }
-    if (reading == HIGH)
+    return false;
+}
+
+bool Button::held(unsigned long targetMs)
+{
+    bool reading = digitalRead(pin);
+    if (reading == LOW && pressStartMs > 0)
     {
-        holdTriggered = false;
+        unsigned long elapsed = millis() - pressStartMs;
+        if (elapsed >= targetMs && lastTriggeredMs < pressStartMs + targetMs)
+        {
+            lastTriggeredMs = millis();
+            return true;
+        }
     }
     return false;
 }

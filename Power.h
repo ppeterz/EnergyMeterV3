@@ -10,7 +10,8 @@ public:
     float realPower(uint16_t *v,
                     uint16_t *i,
                     float voffset,
-                    float ioffset);
+                    float ioffset,
+                    int channel = 0);
 
 };
 

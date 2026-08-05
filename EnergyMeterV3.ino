@@ -98,12 +98,13 @@ DSP dsp;
 
 // ---------------- Blynk: relay & control handlers ----------------
 // Bind 3 switch widgets to V0, V1, V2 in your Blynk template.
-BLYNK_WRITE(V0) { param.asInt() ? relay[0].on() : relay[0].off(); }
-BLYNK_WRITE(V1) { param.asInt() ? relay[1].on() : relay[1].off(); }
-BLYNK_WRITE(V2) { param.asInt() ? relay[2].on() : relay[2].off(); }
+BLYNK_WRITE(V0) { display.resetActivityTimer(); param.asInt() ? relay[0].on() : relay[0].off(); }
+BLYNK_WRITE(V1) { display.resetActivityTimer(); param.asInt() ? relay[1].on() : relay[1].off(); }
+BLYNK_WRITE(V2) { display.resetActivityTimer(); param.asInt() ? relay[2].on() : relay[2].off(); }
 
 // V3 = Tariff Band selector (0=Band A, 1=Band B, 2=Band C, 3=Band D, 4=Band E)
 BLYNK_WRITE(V3) {
+    display.resetActivityTimer();
     int b = param.asInt();
     if (b >= 0 && b < NUM_BANDS) {
         tariff.setBand(static_cast<TariffBand>(b));
@@ -114,6 +115,7 @@ BLYNK_WRITE(V3) {
 
 // V4 = Reset energy counters (Push Button widget)
 BLYNK_WRITE(V4) {
+    display.resetActivityTimer();
     if (param.asInt() == 1) {
         for (int c = 0; c < NUM_CHANNELS; c++) energy[c].reset();
         Serial.println("Blynk: All energy counters reset");
@@ -123,6 +125,7 @@ BLYNK_WRITE(V4) {
 
 // V5 = Calibrate Voltage (Numeric Input widget, e.g. send 225.0)
 BLYNK_WRITE(V5) {
+    display.resetActivityTimer();
     float knownVoltage = param.asFloat();
     if (knownVoltage > 50.0f && knownVoltage < 350.0f) {
         sensor.capture();
@@ -350,27 +353,82 @@ void setup()
     lastScreenChangeMs = millis();
 }
 
+unsigned long lastWatchdogMs = 0;
+const unsigned long WATCHDOG_INTERVAL_MS = 15000;  // Check connection status every 15s
+
 void loop()
 {
     if (wifiConnected) Blynk.run();
 
     command.process(relay, energy, sensor);
 
+    // Smart Wi-Fi & Blynk Auto-Reconnect Watchdog
+    unsigned long now = millis();
+    if (wifiConnected && (now - lastWatchdogMs >= WATCHDOG_INTERVAL_MS))
+    {
+        lastWatchdogMs = now;
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            Serial.println("Watchdog: Wi-Fi connection lost! Reconnecting...");
+            WiFi.reconnect();
+        }
+        else if (!Blynk.connected())
+        {
+            Serial.println("Watchdog: Blynk disconnected! Reconnecting...");
+            Blynk.connect(2000);
+        }
+    }
+
+    // 1.5s Hold -> Toggle relay of current socket (or all relays if on Overview)
+    if (button.heldFor(1500, 4000))
+    {
+        display.resetActivityTimer();
+        if (currentScreen == 0)
+        {
+            bool anyOn = relay[0].isOn() || relay[1].isOn() || relay[2].isOn();
+            for (int i = 0; i < NUM_SOCKETS; i++)
+            {
+                if (anyOn) relay[i].off(); else relay[i].on();
+                if (Blynk.connected()) Blynk.virtualWrite(V0 + i, relay[i].isOn());
+            }
+            display.showMessage("All Relays", anyOn ? "Turned OFF" : "Turned ON");
+            Serial.printf("Button: Toggled ALL relays -> %s\n", anyOn ? "OFF" : "ON");
+        }
+        else
+        {
+            int idx = currentScreen - 1;
+            relay[idx].toggle();
+            if (Blynk.connected()) Blynk.virtualWrite(V0 + idx, relay[idx].isOn());
+            char title[17];
+            snprintf(title, sizeof(title), "Socket %d Relay", idx + 1);
+            display.showMessage(title, relay[idx].isOn() ? "Turned ON" : "Turned OFF");
+            Serial.printf("Button: Toggled Socket %d Relay -> %s\n", idx + 1, relay[idx].isOn() ? "ON" : "OFF");
+        }
+        delay(1200);
+    }
+
     if (button.held(4000))
     {
+        display.resetActivityTimer();
         Serial.println("Button held for 4s -> Triggering GitHub Update Check!");
         display.showMessage("Hold Detected!", "Checking GitHub");
         delay(1000);
         checkForGitHubUpdate();
     }
 
-    if (button.pressed()) advanceScreen();               // manual jump + resets the auto-cycle timer
+    if (button.pressed())
+    {
+        display.resetActivityTimer();
+        advanceScreen();               // manual jump + resets the auto-cycle timer
+    }
+
     {
         unsigned long cycleDuration = (currentScreen == 0) ? HOME_SCREEN_MS : SOCKET_SCREEN_MS;
         if (millis() - lastScreenChangeMs >= cycleDuration) advanceScreen();
     }
 
-    unsigned long now = millis();
+    // LCD Backlight Power Saver (turns off backlight after 60s of inactivity)
+    display.checkPowerSave(60000);
 
     if (now - lastMeasureMs >= MEASURE_INTERVAL_MS)
     {

@@ -53,7 +53,7 @@
 
 // ---------------- Firmware & Remote Auto-OTA ----------------
 
-#define FIRMWARE_VERSION      "3.0.5"
+#define FIRMWARE_VERSION      "3.0.6"
 #define GITHUB_VERSION_URL    "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/version.txt"
 #define GITHUB_FIRMWARE_URL   "https://raw.githubusercontent.com/ppeterz/EnergyMeterV3/main/firmware.bin"
 

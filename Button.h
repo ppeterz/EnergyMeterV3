@@ -7,8 +7,9 @@ class Button
 {
 public:
     void begin(int pin);
-    bool pressed();              // short press click
-    bool held(unsigned long ms); // held for at least N ms (triggers once per hold)
+    bool pressed();                                          // short press click
+    bool heldFor(unsigned long minMs, unsigned long maxMs);  // held between minMs and maxMs
+    bool held(unsigned long ms);                             // held at least ms
 
 private:
     int pin;
@@ -16,7 +17,7 @@ private:
     bool state = HIGH;
     unsigned long lastDebounceMs = 0;
     unsigned long pressStartMs = 0;
-    bool holdTriggered = false;
+    unsigned long lastTriggeredMs = 0;
     static const unsigned long DEBOUNCE_MS = 20;
 };
 

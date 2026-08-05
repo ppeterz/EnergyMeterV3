@@ -7,15 +7,38 @@ void Display::begin()
     Wire.begin(I2C_SDA, I2C_SCL);
     lcd.init();
     lcd.backlight();
+    backlightState = true;
+    lastActivityMs = millis();
     lcd.setCursor(0, 0);
     lcd.print("Energy Monitor");
     lcd.setCursor(0, 1);
     lcd.print("Starting...");
 }
 
+void Display::resetActivityTimer()
+{
+    lastActivityMs = millis();
+    if (!backlightState)
+    {
+        lcd.backlight();
+        backlightState = true;
+    }
+}
+
+void Display::checkPowerSave(unsigned long timeoutMs)
+{
+    if (backlightState && (millis() - lastActivityMs >= timeoutMs))
+    {
+        lcd.noBacklight();
+        backlightState = false;
+    }
+}
+
 // screen 0 = input (total), screen 1..NUM_SOCKETS = that socket
 void Display::show(int screen, const Measurement m[NUM_CHANNELS], Energy energy[NUM_CHANNELS])
 {
+    if (!backlightState) return; // Don't redraw clear screen if backlight is sleeping
+
     lcd.clear();
     if (screen == 0)
     {
@@ -49,6 +72,7 @@ void Display::show(int screen, const Measurement m[NUM_CHANNELS], Energy energy[
 
 void Display::showMessage(const char* line1, const char* line2)
 {
+    resetActivityTimer();
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(line1);
